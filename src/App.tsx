@@ -40,7 +40,13 @@ export default function App() {
   const sessionRef = useRef<any>(null);
   const nextAudioTimeRef = useRef<number>(0);
 
-  const ai = useRef(new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string }));
+  const getAI = () => {
+    const key = process.env.GEMINI_API_KEY;
+    if (!key) {
+      throw new Error("GEMINI_API_KEY missing. Please add it to your environment variables.");
+    }
+    return new GoogleGenAI({ apiKey: key as string });
+  };
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -167,19 +173,18 @@ export default function App() {
         setErrorMessage("Warning: No audio detected. Ensure 'Share system audio' is checked or microphone is active.");
       }
 
-      const sessionPromise = ai.current.live.connect({
+      const sessionPromise = getAI().live.connect({
         model: "gemini-3.1-flash-live-preview",
         config: {
           responseModalities: [Modality.AUDIO],
-          systemInstruction: `You are an ELITE SURVEILLANCE REPORTER linking to a security feed.
+          systemInstruction: `You are a PAYMENT MONITORING BOT.
           MISSION:
-          1. TRANSCRIBE all speech from the feed in real-time.
-          2. DETECT SPANISH speech and translate it to English INSTANTLY.
-          3. PROVIDE constant live narration of visible events (e.g. movement, camera changes).
-          4. FORMAT: Provide the detected event or translation clearly.
-          Example: [EVENT]: Motion detected in sector B. [TRANSLATION]: "Who is there?"
-          
-          BE VERBOSE and objective. Your voice is transcribed for the log, so speak your analysis clearly.`,
+          1. TRANSCRIBE the whole conversation from the feed in real-time.
+          2. DO NOT narrate physical events or movements. Focus ONLY on the conversation.
+          3. IDENTIFY and log any payment transactions discussed or visible.
+          4. EXTRACT the payment time, payment method (e.g., cash, credit card, Apple Pay), and payment amount.
+          5. FORMAT: Provide the conversation transcript. If a payment is detected, append a clear [PAYMENT LOG] with the details.
+          Example: [TRANSCRIPT]: "That will be $25.50." "Here's my card." [PAYMENT LOG]: Amount: $25.50 | Method: Card.`,
           inputAudioTranscription: {},
           outputAudioTranscription: {},
         },
@@ -307,11 +312,11 @@ export default function App() {
     setIsGeneratingScenario(true);
     try {
       const historyText = transcriptions.slice(-20).map(t => `Timestamp: ${new Date(t.timestamp).toLocaleTimeString()}\nOriginal/Transcribed: ${t.text}\nEnglish Translation: ${t.translation}`).join("\n\n");
-      const response = await ai.current.models.generateContent({
+      const response = await getAI().models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: [{ role: "user", parts: [{ text: `Act as a Surveillance Report Officer. Analyze the following combined transcript from a camera feed and generate a "Surveillance Scenario Report". 
-        Include a summary of the situation, identified individuals/roles (e.g. customer vs staff), and a risk assessment of the scenario. 
-        KEEP THE REPORT PROFESSIONAL, CONCISE, AND ALL-CAPS TO MATCH THE MILITARY SURVEILLANCE AESTHETIC.
+        contents: [{ role: "user", parts: [{ text: `Act as a Financial Auditor. Analyze the following combined transcript from a monitoring feed and generate a "Payment Transaction Report". 
+        Include a summary of all payments made, the payment methods used (cash, card, etc.), total amounts, and exact times of transactions. 
+        KEEP THE REPORT PROFESSIONAL, CONCISE, AND ALL-CAPS TO MATCH A SURVEILLANCE AESTHETIC.
         \n\n${historyText}` }] }],
       });
       setScenario(response.text || "No report generated.");
