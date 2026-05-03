@@ -177,14 +177,14 @@ export default function App() {
         model: "gemini-3.1-flash-live-preview",
         config: {
           responseModalities: [Modality.AUDIO],
-          systemInstruction: `You are a PAYMENT MONITORING BOT.
+          systemInstruction: `You are a RETAIL SALES MONITORING BOT.
           MISSION:
-          1. TRANSCRIBE the whole conversation from the feed in real-time.
+          1. TRANSCRIBE the whole conversation between the salesperson and the customer in real-time.
           2. DO NOT narrate physical events or movements. Focus ONLY on the conversation.
-          3. IDENTIFY and log any payment transactions discussed or visible.
-          4. EXTRACT the payment time, payment method (e.g., cash, credit card, Apple Pay), and payment amount.
-          5. FORMAT: Provide the conversation transcript. If a payment is detected, append a clear [PAYMENT LOG] with the details.
-          Example: [TRANSCRIPT]: "That will be $25.50." "Here's my card." [PAYMENT LOG]: Amount: $25.50 | Method: Card.`,
+          3. IDENTIFY AND LOG all payment details: the exact time of payment, payment method used (cash, card, Apple Pay, etc.), and amount.
+          4. IDENTIFY AND LOG specific sales pitches: "phone on AAL" (add a line), "new line", "port in", "tablet pitch", or "accessory pitch".
+          5. FORMAT: Provide the conversation transcript. If a payment or pitch is detected, append a clear [LOG] with the details.
+          Example: [TRANSCRIPT]: "Would you like to add a tablet today?" [LOG]: Pitch Detected: Tablet.`,
           inputAudioTranscription: {},
           outputAudioTranscription: {},
         },
@@ -311,11 +311,14 @@ export default function App() {
     if (transcriptions.length === 0) return;
     setIsGeneratingScenario(true);
     try {
-      const historyText = transcriptions.slice(-20).map(t => `Timestamp: ${new Date(t.timestamp).toLocaleTimeString()}\nOriginal/Transcribed: ${t.text}\nEnglish Translation: ${t.translation}`).join("\n\n");
+      const historyText = transcriptions.slice(-50).map(t => `Timestamp: ${new Date(t.timestamp).toLocaleTimeString()}\nOriginal/Transcribed: ${t.text}\nEnglish Translation: ${t.translation}`).join("\n\n");
       const response = await getAI().models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: [{ role: "user", parts: [{ text: `Act as a Financial Auditor. Analyze the following combined transcript from a monitoring feed and generate a "Payment Transaction Report". 
-        Include a summary of all payments made, the payment methods used (cash, card, etc.), total amounts, and exact times of transactions. 
+        contents: [{ role: "user", parts: [{ text: `Act as a Retail Sales Auditor. Analyze the following combined transcript from a monitoring feed and generate a "Retail Sales & Payment Report". 
+        Include:
+        1. A summary of the conversation between the salesperson and customer.
+        2. All payments made, including exact time, method used (cash/card), and total amount.
+        3. A log of any specific sales pitches made: e.g. "phone on AAL" (add a line), "new line", "port in", "tablet pitch", or "accessory".
         KEEP THE REPORT PROFESSIONAL, CONCISE, AND ALL-CAPS TO MATCH A SURVEILLANCE AESTHETIC.
         \n\n${historyText}` }] }],
       });
