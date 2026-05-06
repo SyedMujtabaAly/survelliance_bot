@@ -331,206 +331,242 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col h-screen overflow-hidden selection:bg-blue-500/30">
-      <header className="flex justify-between items-center px-6 py-4 bg-white border-b border-slate-200 shrink-0 shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className={`w-2.5 h-2.5 rounded-full ${isRecording ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`}></div>
-          <h1 className="text-xl font-semibold tracking-tight text-slate-800">AIMS Services Survelliance Bot</h1>
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 lg:p-8 font-sans border-8 border-zinc-900 flex flex-col gap-8 selection:bg-blue-500/30">
+      <header className="flex justify-between items-start">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <div className={`w-3 h-3 rounded-full ${isRecording ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-700'}`}></div>
+            <span className={`text-[10px] font-bold tracking-[0.2em] uppercase ${isRecording ? 'text-emerald-500' : 'text-zinc-500'}`}>
+              {isRecording ? 'System Live' : 'System Standby'}
+            </span>
+          </div>
+          <h1 className="text-5xl font-black tracking-tighter uppercase italic leading-none">AIMS SERVICES SURVEILLANCE BOT</h1>
         </div>
         
-        <div className="flex items-center gap-6 text-sm">
+        <div className="flex flex-col items-end gap-4 text-right">
           {errorMessage && (
-            <div className="bg-red-50 text-red-600 px-3 py-1.5 rounded-full text-xs font-medium border border-red-200 flex items-center shadow-sm">
-              <Zap className="w-3 h-3 mr-1.5" />
-              {errorMessage}
+            <div className="bg-red-600 px-4 py-2 text-xs font-black uppercase italic tracking-tighter text-white animate-pulse shadow-xl shadow-red-900/40 border border-red-400/50">
+              CRITICAL ERROR: {errorMessage}
             </div>
           )}
-          <div className="flex bg-slate-100 p-1 rounded-lg">
+          <div className="flex gap-2 mb-2">
             {(["camera", "screen"] as const).map((type) => (
               <button
                 key={type}
                 onClick={() => setSourceType(type)}
                 disabled={isRecording}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest border transition-all ${
                   sourceType === type 
-                    ? "bg-white text-blue-600 shadow-sm" 
-                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
-                } disabled:opacity-50`}
+                    ? "bg-zinc-100 text-zinc-950 border-zinc-100" 
+                    : "bg-transparent text-zinc-500 border-zinc-800 hover:border-zinc-700"
+                } disabled:opacity-20`}
               >
-                {type === "camera" ? "Camera" : "Screen Share"}
+                {type === "camera" ? "Webcam" : "Screen Feed"}
               </button>
             ))}
+          </div>
+          <div className="hidden sm:block">
+            <div className="text-[10px] font-mono text-zinc-500 uppercase">SOURCE: {isRecording ? 'NEST_AUDIO_CAM_01' : 'NO_SIGNAL'}</div>
+            <div className="text-[10px] font-mono text-zinc-500 uppercase">LATENCY: {isRecording ? '18MS' : '--'} // G3F_SURVEILLANCE</div>
           </div>
           
           <button
             onClick={isRecording ? stopRecording : startRecording}
-            className={`flex items-center gap-2 px-5 py-2 rounded-lg font-medium transition-all text-sm shadow-sm ${
+            className={`flex items-center gap-2 px-8 py-3 rounded-none font-black uppercase italic tracking-tighter transition-all text-sm shadow-2xl ${
               isRecording 
-                ? 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-200' 
-                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                ? 'bg-red-600 hover:bg-red-700 text-white shadow-red-900/20' 
+                : 'bg-zinc-100 hover:bg-white text-zinc-950 shadow-zinc-100/10'
             }`}
           >
-            {isRecording ? <Square className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-            {isRecording ? 'Stop Recording' : 'Start Recording'}
+            {isRecording ? <Square className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
+            {isRecording ? 'Terminate' : 'Initialize'}
           </button>
         </div>
       </header>
 
-      <main className="flex-1 overflow-hidden p-6 flex gap-6">
+      <main className="flex-1 grid grid-cols-12 gap-8 min-h-0">
         {/* Left Column: Live Transcription & Video */}
-        <section className="w-1/3 flex flex-col gap-6 shrink-0 min-w-[320px]">
-          <div className="bg-slate-900 rounded-xl overflow-hidden aspect-video relative shadow-sm border border-slate-200">
+        <section className="col-span-12 lg:col-span-5 flex flex-col min-h-0 gap-6">
+          <div className="flex justify-end items-end">
+            <div className="px-2 py-0.5 bg-zinc-800 text-[10px] font-mono rounded text-zinc-400 uppercase">LOG ➔ {targetLanguage.slice(0,3)}</div>
+          </div>
+
+          <div className="bg-zinc-900/50 rounded-2xl overflow-hidden aspect-video relative border border-zinc-800 shadow-2xl">
              <video 
                ref={videoRef} 
                autoPlay 
                playsInline 
                muted 
-               className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${isRecording ? 'opacity-100' : 'opacity-0'}`}
+               className={`absolute inset-0 w-full h-full object-cover grayscale transition-opacity duration-1000 ${isRecording ? 'opacity-40' : 'opacity-0'}`}
              />
              <canvas ref={canvasRef} className="hidden" width={640} height={480} />
              
              {!isRecording ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-slate-50">
-                  <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-400">
-                    <Mic className="w-6 h-6" />
+                <div className="absolute inset-0 flex items-center justify-center text-center p-8">
+                  <div className="max-w-xs transition-all duration-700">
+                    <Zap className="w-12 h-12 mx-auto mb-4 text-zinc-700" />
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 mb-4">Awaiting Signal</p>
+                    
+                    {sourceType === "screen" && (
+                      <div className="bg-zinc-800/50 p-4 rounded-xl border border-zinc-700 text-left space-y-2">
+                        <p className="text-[10px] font-black uppercase text-white tracking-tighter">Multi-Profile Setup:</p>
+                        <p className="text-[10px] text-zinc-400 leading-tight">
+                          1. Click "Initialize" and select <b>Window</b> (preferred) or <b>Entire Screen</b>.<br/>
+                          2. Choose the Google Home window from your other profile.<br/>
+                          3. <b>CRITICAL:</b> Ensure "Share system audio" is checked.<br/>
+                          4. Keep that window unminimized for best results.
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  <p className="text-sm font-medium text-slate-600">Camera / Screen inactive</p>
-                  <p className="text-xs text-slate-400 mt-1 max-w-[200px]">Click 'Start Recording' to begin capturing sales data.</p>
                 </div>
              ) : (
-                <div className="absolute top-3 right-3 z-20 flex gap-2">
-                  <div className="bg-black/50 backdrop-blur-md text-white px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 border border-white/10">
-                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
-                    Live
+                <div className="absolute top-4 right-4 z-20 flex gap-2">
+                  <div className="bg-emerald-500 text-zinc-950 px-2 py-0.5 text-[10px] font-black uppercase tracking-tighter">
+                    CONNECTED
                   </div>
                 </div>
              )}
           </div>
 
-          <div className="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
-             <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2 bg-slate-50/50 block">
-                <Languages className="w-4 h-4 text-blue-500" />
-                <h3 className="text-sm font-semibold text-slate-800">Live Transcript</h3>
+          <div id="log-container" className="flex-1 bg-zinc-900/30 rounded-2xl p-6 border border-zinc-800 space-y-4 overflow-y-auto custom-scrollbar scroll-smooth">
+             <div className="flex items-center gap-2 mb-2 pb-2 border-b border-zinc-800/50">
+                <Languages className="w-3 h-3 text-zinc-500" />
+                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest font-mono">Live translation & Events</span>
              </div>
              
-             <div id="log-container" className="flex-1 overflow-y-auto p-5 scroll-smooth custom-scrollbar-light">
-               <AnimatePresence mode="popLayout">
-                 {(currentTranslation || currentTranscription) && (
-                   <motion.div 
-                     key="live"
-                     initial={{ opacity: 0, scale: 0.98 }}
-                     animate={{ opacity: 1, scale: 1 }}
-                     className="mb-6 bg-blue-50/50 p-4 rounded-lg border border-blue-100"
-                   >
-                     <div className="flex items-center gap-2 mb-2">
-                       <Sparkles className="w-3.5 h-3.5 text-blue-500" />
-                       <span className="text-xs font-semibold uppercase tracking-wider text-blue-600">Capturing...</span>
-                     </div>
-                     <div className="text-sm text-slate-500 mb-1">
-                        {currentTranscription}
-                     </div>
-                     <div className="text-sm font-medium text-slate-800">
-                        {currentTranslation}
-                        <motion.span animate={{ opacity: [0, 1] }} transition={{ repeat: Infinity, duration: 0.8 }} className="inline-block w-1.5 h-3.5 bg-blue-500 ml-1.5 align-middle rounded-full" />
-                     </div>
-                   </motion.div>
-                 )}
-               </AnimatePresence>
+             <AnimatePresence mode="popLayout">
+               {(currentTranslation || currentTranscription) ? (
+                 <motion.div 
+                   key="live"
+                   initial={{ opacity: 0, y: 10 }}
+                   animate={{ opacity: 1, y: 0 }}
+                   className="text-xl font-black uppercase tracking-tight text-white leading-tight italic"
+                 >
+                   <span className="text-zinc-600 mr-2 opacity-50 font-mono text-[10px] not-italic">REPORTING //</span>
+                   <div className="text-zinc-400 text-xs not-italic opacity-40 font-mono mb-2 border-l-2 border-zinc-800 pl-2">
+                      SOURCE_FEED: {currentTranscription || 'Analyzing signal...'}
+                   </div>
+                   <div className="text-emerald-400">
+                      {currentTranslation || 'Decoding translation...'}
+                      <motion.span animate={{ opacity: [0, 1] }} transition={{ repeat: Infinity, duration: 0.8 }} className="inline-block w-1 h-5 bg-emerald-500 ml-1 align-middle" />
+                   </div>
+                 </motion.div>
+               ) : (
+                 <p className="text-zinc-600 text-xs italic font-medium">Awaiting security signal...</p>
+               )}
+             </AnimatePresence>
 
-               <div className="space-y-4">
-                  {transcriptions.length === 0 && !currentTranslation && !currentTranscription && (
-                    <div className="flex flex-col items-center justify-center h-40 text-slate-400">
-                      <History className="w-8 h-8 mb-3 opacity-20" />
-                      <p className="text-sm">No activity recorded yet</p>
+             <div className="pt-4 space-y-4 border-t border-zinc-800/50">
+                {transcriptions.slice().reverse().map((t, idx) => (
+                  <div key={t.id} className={`p-4 bg-zinc-800/20 rounded-xl border border-zinc-800/50 space-y-1 transition-all ${idx > 5 ? 'opacity-30' : 'opacity-100 scale-100'}`}>
+                    <div className="flex justify-between items-center">
+                      <p className="text-[10px] font-mono text-zinc-600 tracking-tighter uppercase font-bold">{new Date(t.timestamp).toLocaleTimeString()} // EVENT_LOG</p>
+                      <Shield className="w-3 h-3 text-zinc-700" />
                     </div>
-                  )}
-                  {transcriptions.slice().reverse().map((t, idx) => (
-                    <div key={t.id} className="relative pl-4 border-l-2 border-slate-100 pb-1">
-                      <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-slate-200 border-2 border-white"></div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-medium text-slate-400">{new Date(t.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}</span>
-                      </div>
-                      <p className="text-sm text-slate-700 leading-relaxed">
-                        {t.translation || t.text}
-                      </p>
-                    </div>
-                  ))}
-               </div>
+                    <p className="text-sm leading-relaxed text-zinc-300 font-medium">
+                      {t.translation}
+                    </p>
+                  </div>
+                ))}
              </div>
           </div>
         </section>
 
         {/* Right Column: Scenario Synthesis */}
-        <section className="flex-1 flex flex-col gap-6">
-          <div className="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden relative">
-             <div className="absolute top-0 right-0 p-8 opacity-[0.02] pointer-events-none">
-                <FileText className="w-64 h-64 -mr-16 -mt-16 text-blue-900" />
-             </div>
-
-             <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
-               <div>
-                 <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                   <Shield className="w-5 h-5 text-indigo-500" />
-                   Sales & Payment Audit Report
-                 </h2>
-                 <p className="text-sm text-slate-500 mt-1">AI-generated summary of the current session</p>
-               </div>
-               
-               <button 
-                 onClick={generateScenario}
-                 disabled={transcriptions.length === 0 || isGeneratingScenario}
-                 className="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-4 py-2 rounded-lg flex items-center font-semibold text-sm transition-all disabled:opacity-50 border border-indigo-100"
-               >
-                 {isGeneratingScenario ? (
-                   <span className="flex items-center gap-2">
-                     <div className="w-3 h-3 rounded-full border-2 border-indigo-600 border-t-transparent animate-spin"></div>
-                     Analyzing...
-                   </span>
-                 ) : 'Refresh Report'}
-               </button>
-             </div>
-
-             <div className="flex-1 p-8 overflow-y-auto custom-scrollbar-light relative z-10">
-               {scenario ? (
-                 <div className="text-sm leading-relaxed text-slate-700 whitespace-pre-wrap font-medium pb-8">
-                   {scenario}
-                 </div>
-               ) : (
-                 <div className="h-full flex flex-col flex-1 items-center justify-center text-slate-400">
-                    <FileText className="w-12 h-12 mb-4 opacity-20" />
-                    <p className="text-sm">Awaiting sufficient conversational data.</p>
-                 </div>
-               )}
-             </div>
+        <section className="col-span-12 lg:col-span-7 flex flex-col gap-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500 font-mono">Gemini Scenario Synthesis</h2>
+            <div className="flex gap-4">
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] font-bold text-zinc-500 uppercase font-mono">Context Density</span>
+                <span className="text-sm font-mono font-bold text-zinc-300 italic">{transcriptions.length * 12} // PTS</span>
+              </div>
+            </div>
           </div>
 
-          {/* Action Bars */}
-          <div className="grid grid-cols-3 gap-6 shrink-0">
-             <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-center">
-               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Total Logs</p>
-               <p className="text-3xl font-bold text-slate-800">
-                 {transcriptions.length}
-               </p>
+          <div className="flex-1 flex flex-col min-h-0">
+             {/* Massive Typography Section */}
+             <div className="flex-1 bg-white text-zinc-950 rounded-3xl p-10 flex flex-col justify-between shadow-2xl relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-8 opacity-[0.03] grayscale pointer-events-none">
+                   <FileText className="w-80 h-80 -mr-20 -mt-20 transform rotate-12" />
+                </div>
+
+                <div className="relative z-10">
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] bg-zinc-950 text-white px-3 py-1.5 inline-block mb-10 transition-transform group-hover:translate-x-1">Synthesis Active</span>
+                  <div className="space-y-4">
+                    <h3 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-[0.9] tracking-tighter uppercase italic break-words transition-all duration-700">
+                      {scenario ? (
+                        scenario.trim().split('\n')[0].slice(0, 30) + (scenario.length > 30 ? '...' : '')
+                      ) : (
+                        <span className="text-zinc-100 italic">Signal_Null<br/>Awaiting_Data</span>
+                      )}
+                    </h3>
+                  </div>
+                </div>
+                
+                <div className="relative z-10 grid grid-cols-1 gap-6 border-t border-zinc-100 pt-10 mt-10 overflow-hidden">
+                  <div className="max-h-[300px] overflow-y-auto custom-scrollbar-light pr-4">
+                    <p className="text-[10px] font-bold uppercase mb-4 tracking-widest text-zinc-400 font-mono">Live Intelligence Report</p>
+                    <div className="text-sm font-medium leading-relaxed uppercase tracking-tight text-zinc-800 whitespace-pre-wrap">
+                      {scenario || "Awaiting sufficient conversational data to synthesize a full security assessment report. Ensure your Google Home feed is active and unmuted."}
+                    </div>
+                  </div>
+                </div>
              </div>
-             <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-center">
-               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Current Status</p>
-               <p className="text-3xl font-bold text-slate-800 flex items-center gap-2">
-                 {isRecording ? <span className="text-emerald-500">Active</span> : <span className="text-slate-400">Standby</span>}
-               </p>
-             </div>
-             <div className="bg-gradient-to-br from-indigo-500 to-blue-600 p-5 rounded-xl shadow-sm flex flex-col justify-center text-white">
-               <p className="text-xs font-semibold text-indigo-100 uppercase tracking-wide mb-1">System Integrity</p>
-               <p className="text-3xl font-bold">Secure</p>
+
+             {/* Action Bars */}
+             <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div className="bg-zinc-900 p-6 rounded-2xl border border-zinc-800">
+                  <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 font-mono">Sentiment</p>
+                  <p className="text-2xl font-black italic uppercase tracking-tighter text-zinc-200">
+                    {transcriptions.length > 0 ? 'Dynamic' : 'Neural'}
+                  </p>
+                </div>
+                <div className="bg-zinc-900 p-6 rounded-2xl border border-zinc-800">
+                  <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 font-mono">Confidence</p>
+                  <p className="text-2xl font-black italic uppercase tracking-tighter text-emerald-500">
+                    {transcriptions.length > 0 ? '98.4%' : '0.0%'}
+                  </p>
+                </div>
+                <button 
+                  onClick={generateScenario}
+                  disabled={transcriptions.length === 0 || isGeneratingScenario}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl flex items-center justify-center font-black text-sm uppercase italic tracking-tighter transition-all disabled:opacity-20 shadow-xl shadow-emerald-900/20 active:scale-95"
+                >
+                  {isGeneratingScenario ? 'Processing Report...' : 'Generate Report'}
+                </button>
              </div>
           </div>
         </section>
       </main>
 
+      <footer className="mt-4 flex flex-col sm:flex-row justify-between items-center border-t border-zinc-900/50 pt-10 gap-8">
+        <div className="flex gap-16">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest font-mono">Log Entries</span>
+            <span className="text-3xl font-black italic text-zinc-400 tracking-tighter leading-none mt-1">{transcriptions.length}</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest font-mono">Neural Nodes</span>
+            <span className="text-3xl font-black italic text-zinc-400 tracking-tighter leading-none mt-1">G3F_01</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-6">
+          <div className="px-5 py-2 border border-zinc-800 rounded-none text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">
+            SECURED // TLS_1.3
+          </div>
+          <div className="px-5 py-2 bg-zinc-900 text-zinc-500 rounded-none text-[10px] font-black uppercase tracking-[0.2em] border border-zinc-800">
+            CONNECTIVITY // 100%
+          </div>
+        </div>
+      </footer>
+
       <style>{`
-        .custom-scrollbar-light::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar-light::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar-light::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        .custom-scrollbar-light::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .custom-scrollbar::-webkit-scrollbar { width: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.03); border-radius: 0px; }
+        .custom-scrollbar-light::-webkit-scrollbar { width: 3px; }
+        .custom-scrollbar-light::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: 0px; }
       `}</style>
     </div>
   );

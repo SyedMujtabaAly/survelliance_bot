@@ -1,6 +1,6 @@
 {
-  "name": "Retail Sales Monitor",
-  "description": "Professional real-time monitoring dashboard for retail sales conversations, payments, and pitch performance.",
+  "name": "AIMS SERVICES SURVEILLANCE BOT",
+  "description": "Elite real-time surveillance monitoring system with automated Spanish-to-English translation and AI-powered intelligence reports.",
   "requestFramePermissions": ["camera", "microphone", "display-capture"],
-  "majorCapabilities": ["Real-time Audio Transcription", "Sales Intelligence Insights", "Live Dashboard Analytics"]
+  "majorCapabilities": ["Real-time Audio Transcription", "Multilingual Translation", "AI Scenario Generation"]
 }
