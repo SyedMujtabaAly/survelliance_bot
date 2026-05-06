@@ -177,14 +177,15 @@ export default function App() {
         model: "gemini-3.1-flash-live-preview",
         config: {
           responseModalities: [Modality.AUDIO],
-          systemInstruction: `You are a RETAIL SALES MONITORING BOT.
+          systemInstruction: `You are a RETAIL SALES MONITORING BOT processing a screen/camera feed.
           MISSION:
           1. TRANSCRIBE the whole conversation between the salesperson and the customer in real-time.
-          2. DO NOT narrate physical events or movements. Focus ONLY on the conversation.
-          3. IDENTIFY AND LOG all payment details: the exact time of payment, payment method used (cash, card, Apple Pay, etc.), and amount.
-          4. IDENTIFY AND LOG specific sales pitches: "phone on AAL" (add a line), "new line", "port in", "tablet pitch", or "accessory pitch".
-          5. FORMAT: Provide the conversation transcript. If a payment or pitch is detected, append a clear [LOG] with the details.
-          Example: [TRANSCRIPT]: "Would you like to add a tablet today?" [LOG]: Pitch Detected: Tablet.`,
+          2. DO NOT narrate physical events EXCEPT payment actions.
+          3. IDENTIFY AND LOG all payment details: read the physical time visible on the camera, screen, or PC taskbar (e.g. the seek time on the right). Use this exact visible time for all logs.
+          4. FOR CASH PAYMENTS: Specifically log the EXACT physical time when the salesperson was handed the actual cash amount, and log the LAST AMOUNT the salesperson quoted right before the cash was handed over.
+          5. IDENTIFY AND LOG specific sales pitches: "phone on AAL" (add a line), "new line", "port in", "tablet pitch", or "accessory".
+          6. FORMAT: Provide the conversation transcript. If a payment or pitch is detected, append a clear [LOG] with the details including the visible timestamp.
+          Example: [TRANSCRIPT]: "That'll be $40." [LOG 14:32:05]: Amount quoted: $40. Cash handed over at this exact time.`,
           inputAudioTranscription: {},
           outputAudioTranscription: {},
         },
@@ -317,8 +318,9 @@ export default function App() {
         contents: [{ role: "user", parts: [{ text: `Act as a Retail Sales Auditor. Analyze the following combined transcript from a monitoring feed and generate a "Retail Sales & Payment Report". 
         Include:
         1. A summary of the conversation between the salesperson and customer.
-        2. All payments made, including exact time, method used (cash/card), and total amount.
-        3. A log of any specific sales pitches made: e.g. "phone on AAL" (add a line), "new line", "port in", "tablet pitch", or "accessory".
+        2. All payments made, including exact time (use the physical camera/PC timestamps captured in the logs), method used (cash/card), and total amount.
+        3. FOR CASH PAYMENTS: highlight the exact timestamp when the salesperson was physically handed the amount, and the last quoted amount before money changed hands.
+        4. A log of any specific sales pitches made: e.g. "phone on AAL" (add a line), "new line", "port in", "tablet pitch", or "accessory".
         KEEP THE REPORT PROFESSIONAL, CONCISE, AND ALL-CAPS TO MATCH A SURVEILLANCE AESTHETIC.
         \n\n${historyText}` }] }],
       });
