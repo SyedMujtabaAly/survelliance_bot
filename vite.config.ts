@@ -23,8 +23,6 @@ export default defineConfig(({mode}) => {
       chunkSizeWarningLimit: 1500, // Adjust chunk size limit to avoid Vercel warnings
     },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
     },
   };
