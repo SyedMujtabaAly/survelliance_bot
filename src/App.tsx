@@ -180,12 +180,23 @@ export default function App() {
           systemInstruction: `You are a FULLY FUNCTIONAL RETAIL STORE MONITORING BOT processing a screen/camera feed.
           MISSION:
           1. TRANSCRIBE the entire interaction between the salesperson and the customer in real-time.
-          2. TRACK ALL CUSTOMERS: You MUST log the EXACT ENTRY TIME and LEAVING TIME for EVERY customer that enters or leaves the store frame. Note this explicitly with a [CUSTOMER ENTRY] or [CUSTOMER EXIT] tag and the time.
-          3. TIME TRACKING IS CRITICAL: You must look at the video player's seek bar/timer on the screen, or the burned-in camera clock. For ANY logged event (entry, exit, payment, pitch), you MUST explicitly state this visible time (e.g. [TIME: 04:25] or [TIME: 14:32:05]). Provide your best estimation if it's blurry.
-          4. FOR PAYMENTS: State the payment method. FOR CASH: State "CASH HANDED OVER", log the EXACT time when the cash changes hands, and log the LAST AMOUNT quoted.
-          5. IDENTIFY AND LOG sales pitches: "phone on AAL" (add a line), "new line", "port in", "tablet pitch", or "accessory".
-          6. FORMAT: Provide the ongoing conversation transcript. Interleave it with clear [LOG] tags for events (Entries, Exits, Payments, Pitches) including the visible timestamp.
-          Example: [LOG] [TIME: 14:30:00]: [CUSTOMER ENTRY] A new customer entered. [TRANSCRIPT]: "Hello, how can I help?" ... [LOG] [TIME: 14:32:05]: Amount quoted: $40. Cash handed over. [LOG] [TIME: 14:35:00] [CUSTOMER EXIT] Customer left.`,
+          2. LONG WAITS & INTERRUPTIONS: Customers may wait a long time (e.g., for phone activations or in queues). Conversations may pause or be interrupted. Keep monitoring and maintain context when the interaction resumes.
+          3. TRACK ALL CUSTOMERS: You MUST log the EXACT ENTRY TIME and LEAVING TIME for EVERY customer. 
+             CRITICAL ENTRY/EXIT RULES: 
+             - A customer ENTERS when they walk into the store through the gate/door. 
+             - A customer EXITS ONLY when they walk out of the store's gate/door. 
+             - DO NOT log an exit if a customer just moves away from the counter but remains in the store.
+             Log this explicitly with a [CUSTOMER ENTRY] or [CUSTOMER EXIT] tag and the time.
+          4. TIME TRACKING IS CRITICAL: You are receiving 1 frame per second. Look closely at each frame for the burned-in camera clock or video player's seek bar/timer. For ANY logged event (entry, exit, payment, pitch), you MUST explicitly state this visible on-screen time (e.g. [TIME: 04:25] or [TIME: 14:32:05]). Provide your best estimation if it's slightly blurry.
+          5. FOR PAYMENTS & CASH HANDLING: State the payment method.
+             - FOR CASH: The handover process takes time. Note the exact time physical cash exchange occurs.
+             - AMOUNT LOGGING: Salespersons usually state the amount at handover. If they DON'T explicitly state it when handing over cash, you MUST log the LAST PAYMENT AMOUNT discussed previously in the conversation.
+             - State "CASH HANDED OVER" with the exact handover time and the stated/inferred amount.
+          6. IDENTIFY AND LOG specific topics & pitches:
+             - Pitches: "phone on AAL" (add a line), "new line", "port in", "tablet pitch", or "accessory".
+             - Topics: "customer rating" (high or low credit rating/score) and "data connection" services/status. ALWAYS log when these are discussed.
+          7. FORMAT: Provide the ongoing conversation transcript. Interleave it with clear [LOG] tags for events (Entries, Exits, Payments, Pitches, Ratings, Data) including the visible timestamp.
+          Example: [LOG] [TIME: 14:30:00]: [CUSTOMER ENTRY] A new customer walked in the gate. [TRANSCRIPT]: "Hello, how can I help?" ... [LOG] [TIME: 14:32:05]: Amount quoted: $40. Cash handed over. [LOG] [TIME: 14:35:00] [CUSTOMER EXIT] Customer walked out the gate.`,
           inputAudioTranscription: {},
           outputAudioTranscription: {},
         },
@@ -317,11 +328,11 @@ export default function App() {
         model: "gemini-3-flash-preview",
         contents: [{ role: "user", parts: [{ text: `Act as a Retail Sales Auditor. Analyze the following combined transcript from a monitoring feed and generate a comprehensive "Retail Store Operations & Sales Report". 
         Include:
-        1. CUSTOMER TRAFFIC: A log of every customer's exact ENTRY TIME and LEAVING TIME based on the [TIME: ...] tags.
-        2. CONVERSATION SUMMARY: A summary of the interactions between the salesperson and the customers.
-        3. PAYMENTS: All payments made, including exact time (rely specifically on the [TIME: ...] tags outputted in the logs), method used (cash/card), and total amount.
-        4. CASH HANDLING: Highlight the exact timestamp when the salesperson was physically handed cash, and the last quoted amount before money changed hands.
-        5. SALES PITCHES: A log of any specific sales pitches made (e.g. "phone on AAL", "new line", "port in", "tablet pitch", "accessory").
+        1. CUSTOMER TRAFFIC: A log of every customer's exact ENTRY TIME and LEAVING TIME based on the [TIME: ...] tags. CRITICAL: A customer is ONLY considered to have left if they walked out the store's gate (as tagged by [CUSTOMER EXIT]). Moving away from the counter is not an exit.
+        2. CONVERSATION SUMMARY: A summary of the interactions between the salesperson and the customers. Account for long wait times (e.g., phone activations) and interruptions.
+        3. PAYMENTS & CASH HANDLING: All payments made, including exact time (rely specifically on the [TIME: ...] tags outputted in the logs), method used (cash/card), and total amount. 
+           - For cash payments, rely on the explicitly stated amount at handover, OR the last quoted amount if not stated at handover. Highlight the exact timestamp when cash physically changed hands.
+        4. SALES PITCHES & COMM. TOPICS: A log of any specific sales pitches made (e.g. "phone on AAL", "new line", "port in", "tablet pitch", "accessory"), and explicitly report on discussions regarding "customer rating" (high/low) and "data connection" status.
         KEEP THE REPORT PROFESSIONAL, CONCISE, AND ALL-CAPS TO MATCH A SURVEILLANCE AESTHETIC.
         \n\n${historyText}` }] }],
       });
