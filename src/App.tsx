@@ -220,13 +220,13 @@ export default function App() {
           responseModalities: [Modality.AUDIO],
           systemInstruction: `You are a RETAIL SALES MONITORING BOT processing a screen/camera feed.
           MISSION:
-          1. TRANSCRIBE EVERY INTERACTION: Transcribe the ENTIRE conversation between the salesperson and customer in real-time. Output dialogue immediately to ensure absolutely no interactions or conversation frames are missed due to lag.
-          2. TRACK CUSTOMER EXITS: Monitor when a customer is at the counter and definitively log the exact time when the customer leaves or exits the store.
-          3. LOG PAYMENTS ACCURATELY: IDENTIFY AND LOG all payment details. You MUST accurately read the physical time visible on the camera feed (specifically check the right side for the camera/seek time). 
-          4. FOR CASH PAYMENTS: Log the exact physical camera timestamp when the salesperson is handed the actual cash amount, and log the LAST AMOUNT the salesperson quoted right before the cash was handed over.
-          5. IDENTIFY AND LOG specific sales pitches: "phone on AAL", "new line", "port in", "tablet pitch", or "accessory".
-          6. FORMAT: Provide the transcript continuously. If an event (payment, pitch, exit) is detected, append a clear [LOG] with details and the exact camera feed timestamp.
-          Example: [TRANSCRIPT]: "That'll be $40." [LOG 14:32:05]: Amount quoted: $40. Cash handed over. [LOG 14:35:00]: Customer exited the store.`,
+          1. TRACK MULTIPLE CUSTOMERS: Assign a unique ID to each customer (e.g., Customer 1, Customer 2). Record their exact arrival time based on the physical camera feed timestamp. Track all customers simultaneously.
+          2. TRANSCRIBE EVERY INTERACTION INDIVIDUALLY: Transcribe the ENTIRE conversation between the salesperson and EACH customer in real-time. Prefix every line of dialogue with the relevant customer ID (e.g., "[Customer 1] Customer: I need a phone", "[Customer 1] Salesperson: Sure").
+          3. TRACK CUSTOMER EXITS: Monitor when each customer leaves the store. Definitively log their exit using the EXACT format: "[EVENT: EXIT] Customer <X> exited at <TIMESTAMP>"
+          4. LOG PAYMENTS ACCURATELY: IDENTIFY AND LOG all payment details per customer. You MUST accurately read the physical time visible on the camera feed. Format: "[EVENT: PAYMENT] Customer <X> paid <AMOUNT> via <METHOD> at <TIMESTAMP>."
+          5. FOR CASH PAYMENTS: Log the exact physical camera timestamp when the salesperson is handed the actual cash amount, and log the LAST AMOUNT quoted.
+          6. IDENTIFY AND LOG specific sales pitches: e.g., "phone on AAL", "new line", "port in", "tablet pitch", or "accessory". Format: "[EVENT: PITCH] Customer <X> pitched <PITCH_TYPE> at <TIMESTAMP>."
+          7. Output dialogue immediately to ensure absolutely no interactions are missed. Keep transcripts separated by prefixing each log or transcript line with the Customer ID.`,
           inputAudioTranscription: {},
           outputAudioTranscription: {},
         },
@@ -398,17 +398,46 @@ export default function App() {
     setIsRecording(false);
   };
 
-  const generateScenario = async () => {
+  const autoGenerateTriggered = useRef<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (transcriptions.length > 0) {
+      const latest = transcriptions[transcriptions.length - 1];
+      if (
+        latest.translation.includes("[EVENT: EXIT]") ||
+        latest.text.includes("[EVENT: EXIT]")
+      ) {
+        // extract the specific exit string, e.g. [EVENT: EXIT] Customer 1 exited
+        const exitMatch =
+          latest.translation.match(/\[EVENT: EXIT\].*/i) ||
+          latest.text.match(/\[EVENT: EXIT\].*/i);
+        const triggerStr = exitMatch ? exitMatch[0] : "[EVENT: EXIT] Detected";
+
+        // Prevent re-triggering for the exact same event
+        if (!autoGenerateTriggered.current[latest.id]) {
+          autoGenerateTriggered.current[latest.id] = true;
+          generateScenario(triggerStr);
+        }
+      }
+    }
+  }, [transcriptions]);
+
+  const generateScenario = async (triggerEvent?: string) => {
     if (transcriptions.length === 0) return;
     setIsGeneratingScenario(true);
     try {
       const historyText = transcriptions
-        .slice(-50)
+        .slice(-100)
         .map(
           (t) =>
             `Timestamp: ${new Date(t.timestamp).toLocaleTimeString()}\nOriginal/Transcribed: ${t.text}\nEnglish Translation: ${t.translation}`,
         )
         .join("\n\n");
+
+      const specificPrompt = triggerEvent
+        ? `\n\nTRIGGER WARNING: This report was automatically triggered by the following event: "${triggerEvent}". Please dedicate this report to analyzing the interaction and events involving the customer who triggered this event.`
+        : "";
+
       const response = await getAI().models.generateContent({
         model: "gemini-3.1-pro-preview",
         contents: [
@@ -416,9 +445,9 @@ export default function App() {
             role: "user",
             parts: [
               {
-                text: `Act as a Retail Sales Auditor. Analyze the following combined transcript from a monitoring feed and generate a "Retail Sales & Payment Report". 
+                text: `Act as a Retail Sales Auditor. Analyze the following combined transcript from a monitoring feed and generate a "Retail Sales & Payment Report". ${specificPrompt}
         Include:
-        1. A comprehensive summary of EVERY SINGLE interaction between the salesperson and customer. Do not omit any conversation.
+        1. A comprehensive summary of EVERY SINGLE interaction between the salesperson and customer(s). Do not omit any conversation.
         2. Customer events: Log when the customer exits or leaves the store, including the exact camera timestamp.
         3. All payments made, including exact time (using the physical camera timestamps captured from the right side of the feed), method used (cash/card), and total amount.
         4. FOR CASH PAYMENTS: highlight the exact timestamp when the salesperson was physically handed the amount, and the last quoted amount before money changed hands.
@@ -430,7 +459,11 @@ export default function App() {
           },
         ],
       });
-      setScenario(response.text || "No report generated.");
+      setScenario(
+        (prev) =>
+          (prev ? prev + "\n\n====================\n\n" : "") +
+          (response.text || "No report generated."),
+      );
     } catch (err) {
       console.error("Scenario generation failed:", err);
     } finally {
