@@ -177,26 +177,15 @@ export default function App() {
         model: "gemini-3.1-flash-live-preview",
         config: {
           responseModalities: [Modality.AUDIO],
-          systemInstruction: `You are a FULLY FUNCTIONAL RETAIL STORE MONITORING BOT processing a screen/camera feed.
+          systemInstruction: `You are a RETAIL SALES MONITORING BOT processing a screen/camera feed.
           MISSION:
-          1. TRANSCRIBE the entire interaction between the salesperson and the customer in real-time.
-          2. LONG WAITS & INTERRUPTIONS: Customers may wait a long time (e.g., for phone activations or in queues). Conversations may pause or be interrupted. Keep monitoring and maintain context when the interaction resumes.
-          3. TRACK ALL CUSTOMERS: You MUST log the EXACT ENTRY TIME and LEAVING TIME for EVERY customer. 
-             CRITICAL ENTRY/EXIT RULES: 
-             - A customer ENTERS when they walk into the store through the gate/door. 
-             - A customer EXITS ONLY when they walk out of the store's gate/door. 
-             - DO NOT log an exit if a customer just moves away from the counter but remains in the store.
-             Log this explicitly with a [CUSTOMER ENTRY] or [CUSTOMER EXIT] tag and the time.
-          4. TIME TRACKING IS CRITICAL: You are receiving 1 frame per second. Look closely at each frame for the burned-in camera clock or video player's seek bar/timer. For ANY logged event (entry, exit, payment, pitch), you MUST explicitly state this visible on-screen time (e.g. [TIME: 04:25] or [TIME: 14:32:05]). Provide your best estimation if it's slightly blurry.
-          5. FOR PAYMENTS & CASH HANDLING: State the payment method.
-             - FOR CASH: The handover process takes time. Note the exact time physical cash exchange occurs.
-             - AMOUNT LOGGING: Salespersons usually state the amount at handover. If they DON'T explicitly state it when handing over cash, you MUST log the LAST PAYMENT AMOUNT discussed previously in the conversation.
-             - State "CASH HANDED OVER" with the exact handover time and the stated/inferred amount.
-          6. IDENTIFY AND LOG specific topics & pitches:
-             - Pitches: "phone on AAL" (add a line), "new line", "port in", "tablet pitch", or "accessory".
-             - Topics: "customer rating" (high or low credit rating/score) and "data connection" services/status. ALWAYS log when these are discussed.
-          7. FORMAT: Provide the ongoing conversation transcript. Interleave it with clear [LOG] tags for events (Entries, Exits, Payments, Pitches, Ratings, Data) including the visible timestamp.
-          Example: [LOG] [TIME: 14:30:00]: [CUSTOMER ENTRY] A new customer walked in the gate. [TRANSCRIPT]: "Hello, how can I help?" ... [LOG] [TIME: 14:32:05]: Amount quoted: $40. Cash handed over. [LOG] [TIME: 14:35:00] [CUSTOMER EXIT] Customer walked out the gate.`,
+          1. TRANSCRIBE the whole conversation between the salesperson and the customer in real-time.
+          2. DO NOT narrate physical events EXCEPT payment actions.
+          3. IDENTIFY AND LOG all payment details: read the physical time visible on the camera, screen, or PC taskbar (e.g. the seek time on the right). Use this exact visible time for all logs.
+          4. FOR CASH PAYMENTS: Specifically log the EXACT physical time when the salesperson was handed the actual cash amount, and log the LAST AMOUNT the salesperson quoted right before the cash was handed over.
+          5. IDENTIFY AND LOG specific sales pitches: "phone on AAL" (add a line), "new line", "port in", "tablet pitch", or "accessory".
+          6. FORMAT: Provide the conversation transcript. If a payment or pitch is detected, append a clear [LOG] with the details including the visible timestamp.
+          Example: [TRANSCRIPT]: "That'll be $40." [LOG 14:32:05]: Amount quoted: $40. Cash handed over at this exact time.`,
           inputAudioTranscription: {},
           outputAudioTranscription: {},
         },
@@ -326,13 +315,12 @@ export default function App() {
       const historyText = transcriptions.slice(-50).map(t => `Timestamp: ${new Date(t.timestamp).toLocaleTimeString()}\nOriginal/Transcribed: ${t.text}\nEnglish Translation: ${t.translation}`).join("\n\n");
       const response = await getAI().models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: [{ role: "user", parts: [{ text: `Act as a Retail Sales Auditor. Analyze the following combined transcript from a monitoring feed and generate a comprehensive "Retail Store Operations & Sales Report". 
+        contents: [{ role: "user", parts: [{ text: `Act as a Retail Sales Auditor. Analyze the following combined transcript from a monitoring feed and generate a "Retail Sales & Payment Report". 
         Include:
-        1. CUSTOMER TRAFFIC: A log of every customer's exact ENTRY TIME and LEAVING TIME based on the [TIME: ...] tags. CRITICAL: A customer is ONLY considered to have left if they walked out the store's gate (as tagged by [CUSTOMER EXIT]). Moving away from the counter is not an exit.
-        2. CONVERSATION SUMMARY: A summary of the interactions between the salesperson and the customers. Account for long wait times (e.g., phone activations) and interruptions.
-        3. PAYMENTS & CASH HANDLING: All payments made, including exact time (rely specifically on the [TIME: ...] tags outputted in the logs), method used (cash/card), and total amount. 
-           - For cash payments, rely on the explicitly stated amount at handover, OR the last quoted amount if not stated at handover. Highlight the exact timestamp when cash physically changed hands.
-        4. SALES PITCHES & COMM. TOPICS: A log of any specific sales pitches made (e.g. "phone on AAL", "new line", "port in", "tablet pitch", "accessory"), and explicitly report on discussions regarding "customer rating" (high/low) and "data connection" status.
+        1. A summary of the conversation between the salesperson and customer.
+        2. All payments made, including exact time (use the physical camera/PC timestamps captured in the logs), method used (cash/card), and total amount.
+        3. FOR CASH PAYMENTS: highlight the exact timestamp when the salesperson was physically handed the amount, and the last quoted amount before money changed hands.
+        4. A log of any specific sales pitches made: e.g. "phone on AAL" (add a line), "new line", "port in", "tablet pitch", or "accessory".
         KEEP THE REPORT PROFESSIONAL, CONCISE, AND ALL-CAPS TO MATCH A SURVEILLANCE AESTHETIC.
         \n\n${historyText}` }] }],
       });
@@ -490,7 +478,7 @@ export default function App() {
         {/* Right Column: Scenario Synthesis */}
         <section className="col-span-12 lg:col-span-7 flex flex-col gap-6">
           <div className="flex justify-between items-center">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500 font-mono">codewithmujtaba</h2>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500 font-mono">Gemini Scenario Synthesis</h2>
             <div className="flex gap-4">
               <div className="flex flex-col items-end">
                 <span className="text-[10px] font-bold text-zinc-500 uppercase font-mono">Context Density</span>

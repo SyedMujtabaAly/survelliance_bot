@@ -1,5 +1,5 @@
 /**
- * ye audio processing part hai
+ * Utility functions for audio processing.
  */
 
 export function arrayBufferToBase64(buffer: ArrayBuffer): string {

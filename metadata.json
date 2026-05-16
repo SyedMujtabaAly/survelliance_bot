@@ -1,6 +1,6 @@
 {
   "name": "AIMS SERVICES SURVEILLANCE BOT",
-  "description": "Advanced Surveillance Platform with Real-Time Translation and AI-Driven Intelligence Reporting",
+  "description": "Elite real-time surveillance monitoring system with automated Spanish-to-English translation and AI-powered intelligence reports.",
   "requestFramePermissions": ["camera", "microphone", "display-capture"],
   "majorCapabilities": ["Real-time Audio Transcription", "Multilingual Translation", "AI Scenario Generation"]
 }
