@@ -181,10 +181,17 @@ export default function App() {
           MISSION:
           1. TRANSCRIBE the whole conversation between the salesperson and the customer in real-time.
           2. DO NOT narrate physical events or movements. Focus ONLY on the conversation.
-          3. IDENTIFY AND LOG all payment details: the exact time of payment, payment method used (cash, card, Apple Pay, etc.), and amount.
+          3. PAYMENT DETECTION: RELIABLY IDENTIFY, EXTRACT AND LOG all payment details. You must accurately capture:
+             - Payment Method: specifically identify if it's Cash, Credit/Debit Card, Tap-to-Pay, Apple Pay, Google Pay, Digital Wallet, etc.
+             - Exact Amount.
+             - Time of payment (based on conversation context).
           4. IDENTIFY AND LOG specific sales pitches: "phone on AAL" (add a line), "new line", "port in", "tablet pitch", or "accessory pitch".
-          5. FORMAT: Provide the conversation transcript. If a payment or pitch is detected, append a clear [LOG] with the details.
-          Example: [TRANSCRIPT]: "Would you like to add a tablet today?" [LOG]: Pitch Detected: Tablet.`,
+          5. EXPLICIT SPEAKER TAGS: You MUST label every single line of transcription with either [SALESPERSON]: or [CUSTOMER]: depending on who is speaking. START every new spoken line on a NEW LINE. NEVER omit these tags.
+          6. FORMAT: Provide the conversation transcript. If a payment or pitch is detected, append a clear [LOG] with the details on a NEW LINE.
+          Example: 
+          [SALESPERSON]: "That will be $45.50."
+          [CUSTOMER]: "Here, I'll just use Apple Pay."
+          [LOG]: Payment Detected: $45.50 via Apple Pay.`,
           inputAudioTranscription: {},
           outputAudioTranscription: {},
         },
@@ -211,6 +218,14 @@ export default function App() {
           },
           onmessage: async (message: LiveServerMessage) => {
             console.log("G-Stream Msg:", message);
+
+            if (message.goAway) {
+               console.warn("Received GoAway signal from Gemini API. Session duration reached.", message.goAway);
+               setErrorMessage("Session duration limit reached. Please re-initialize.");
+               stopRecording();
+               return;
+            }
+
             const serverContent = message.serverContent;
             if (!serverContent) return;
             
@@ -464,9 +479,44 @@ export default function App() {
                       <p className="text-[10px] font-mono text-zinc-600 tracking-tighter uppercase font-bold">{new Date(t.timestamp).toLocaleTimeString()} // EVENT_LOG</p>
                       <Shield className="w-3 h-3 text-zinc-700" />
                     </div>
-                    <p className="text-sm leading-relaxed text-zinc-300 font-medium">
-                      {t.translation}
-                    </p>
+                    <div className="text-sm leading-relaxed text-zinc-300 font-medium space-y-3 mt-4">
+                      {t.translation.split('\n').filter(line => line.trim() !== '').map((line, i) => {
+                         const isSales = line.includes('[SALESPERSON]');
+                         const isCust = line.includes('[CUSTOMER]');
+                         const isLog = line.includes('[LOG]');
+                         
+                         if (isSales) {
+                           return (
+                             <div key={i} className="flex flex-col items-start w-full">
+                               <div className="bg-blue-900/20 border border-blue-800/30 text-blue-100 px-4 py-2.5 rounded-2xl rounded-tl-sm max-w-[90%] font-sans">
+                                 {line.replace(/\[SALESPERSON\]:?/g, '').trim()}
+                               </div>
+                               <span className="text-[9px] text-blue-500/70 font-black tracking-widest font-mono mt-1.5 ml-1 uppercase">Salesperson</span>
+                             </div>
+                           );
+                         } else if (isCust) {
+                           return (
+                             <div key={i} className="flex flex-col items-end w-full">
+                               <div className="bg-emerald-900/20 border border-emerald-800/30 text-emerald-100 px-4 py-2.5 rounded-2xl rounded-tr-sm max-w-[90%] text-right font-sans">
+                                 {line.replace(/\[CUSTOMER\]:?/g, '').trim()}
+                               </div>
+                               <span className="text-[9px] text-emerald-500/70 font-black tracking-widest font-mono mt-1.5 mr-1 uppercase">Customer</span>
+                             </div>
+                           );
+                         } else if (isLog) {
+                           return (
+                             <div key={i} className="flex flex-col items-center w-full my-4">
+                               <div className="bg-amber-900/20 border border-amber-800/40 text-amber-400 px-6 py-2 rounded-none text-xs w-full text-center uppercase tracking-widest font-mono">
+                                 {line.replace(/\[LOG\]:?/g, '').trim()}
+                               </div>
+                             </div>
+                           );
+                         }
+                         
+                         // Fallback for unformatted text
+                         return <div key={i} className="px-2 py-1 text-zinc-400 italic">{line}</div>;
+                      })}
+                    </div>
                   </div>
                 ))}
              </div>
