@@ -476,7 +476,7 @@ export default function App() {
         {/* Right Column: Scenario Synthesis */}
         <section className="col-span-12 lg:col-span-7 flex flex-col gap-6">
           <div className="flex justify-between items-center">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500 font-mono">Gemini Scenario Synthesis</h2>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500 font-mono">CODE WITH MUJT4B4</h2>
             <div className="flex gap-4">
               <div className="flex flex-col items-end">
                 <span className="text-[10px] font-bold text-zinc-500 uppercase font-mono">Context Density</span>
